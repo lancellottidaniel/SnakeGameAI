@@ -44,9 +44,9 @@
     let dx = 10;
     // Vertical velocity
     let dy = 0;
-	//global boolean variable
-	let globalBoolean = false;
-
+    //global boolean variable
+    let globalBoolean = false;
+    let hitBox = false;
     
     
     // Get the canvas element
@@ -65,10 +65,15 @@
 
         setTimeout(function onTick() {
         clear_board();
-        drawFood();     
-        drawSnake();
-		calculateHittingMatrix();
-        move_auto();
+        drawFood();   
+		hitBox = calculateHittingMatrix();
+		if(hitBox){
+			drawSnake();
+			move_snake();
+		}  else {
+			move_auto();
+			drawSnake();
+		}        
         // Recursive main function
         main();
       }, 100)
@@ -311,7 +316,6 @@
 		const goingLeft = dx === -10;
 		var neighborMatrix = [];
 		var localBoolean = false;
-		wallHitBoolean = wallHittingValidation();
 
 		//Neighbors validation start
 		if(goingUp) {
@@ -339,34 +343,35 @@
 		//Where to go decision - based on the neighbors - start
 		for(var i = neighborMatrix.length - 1; i >=0 ; i--) {
 			for(var j = snake.length - 1; j >= 0; j--){
-				if(snake[j].x.toString().includes(neighborMatrix[i].x) && !goingRight && !localBoolean && !snake[j].x.toString().includes(food_x) && !wallHitBoolean){					
+				if(snake[j].x.toString().includes(neighborMatrix[i].x) && !goingRight && !localBoolean && !snake[j].x.toString().includes(food_x)){					
 					dx = -10;
 					dy = 0;
 					console.log("test turning left if not going right")
 					localBoolean = true;
 					break;
-				} else if(snake[j].x.toString().includes(neighborMatrix[i].x) && !goingLeft && !localBoolean && !snake[j].x.toString().includes(food_x) && !wallHitBoolean){
+				} else if(snake[j].x.toString().includes(neighborMatrix[i].x) && !goingLeft && !localBoolean && !snake[j].x.toString().includes(food_x)){
 					dx = 10;
 					dy = 0;
 					console.log("test turning right if not going left");
 					localBoolean = true;
 					break;
-				} else if (snake[j].y.toString().includes(neighborMatrix[i].y) && !goingDown && !localBoolean && !snake[j].y.toString().includes(food_y) && !wallHitBoolean){
+				} else if (snake[j].y.toString().includes(neighborMatrix[i].y) && !goingDown && !localBoolean && !snake[j].y.toString().includes(food_y)){
 					dx = 0;
 					dy = -10;
 					console.log("test turning up if not going down");
 					localBoolean = true;
 					break;
-				} else if (snake[j].y.toString().includes(neighborMatrix[i].y) && !goingUp && !localBoolean && !snake[j].y.toString().includes(food_y) && !wallHitBoolean){
+				} else if (snake[j].y.toString().includes(neighborMatrix[i].y) && !goingUp && !localBoolean && !snake[j].y.toString().includes(food_y)){
 					dx = 0;
 					dy = 10;
 					console.log("test turning down if not going up");
 					localBoolean = true;
 					break;
 				}
-				if(localBoolean){drawSnake(); move_snake();}
 			}
-			if(localBoolean){break;}
+			if(localBoolean){
+				return true;
+			} else { return false;}
 		}
 
 		neighborMatrix = [];
