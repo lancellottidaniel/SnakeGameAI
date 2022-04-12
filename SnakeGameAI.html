@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  	<title>Snake Game</title>
+  </head>
+
+  <body>
+    <background color ="black">
+    <div id="score">0</div>
+    <canvas id="snakeboard" width="300" height="300"></canvas>
+
+    <style>
+      #snakeboard {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      #score {
+        text-align: center;
+        font-size: 140px;
+      }
+    </style>
+  </body>
+
+  <script>
+    const board_border = 'white';
+    const board_background = "black";
+    const snake_col = 'green';
+    const snake_border = 'darkblue';
+    
+    Array (snake = [
+      {x: 200, y: 200},
+      {x: 190, y: 200},
+      {x: 180, y: 200},
+      {x: 170, y: 200},
+      {x: 160, y: 200}
+    ])
+
+    let score = 0;
+    // Horizontal velocity
+    let food_x;
+    let food_y;
+    let dx = 10;
+    // Vertical velocity
+    let dy = 0;
+	//global boolean variable
+	let globalBoolean = false;
+
+    
+    
+    // Get the canvas element
+    const snakeboard = document.getElementById("snakeboard");
+    // Return a two dimensional drawing context
+    const snakeboard_ctx = snakeboard.getContext("2d");
+    // Start game
+    main();
+
+    gen_food();
+    
+    // main function called repeatedly to keep the game running
+    function main() {
+
+        if (has_game_ended()) return;
+
+        setTimeout(function onTick() {
+        clear_board();
+        drawFood();     
+        drawSnake();
+		calculateHittingMatrix();
+        move_auto();
+        // Recursive main function
+        main();
+      }, 100)
+    }
+    
+    function move_auto(){
+		//init variables
+		const has_eaten_food = snake[0].x === food_x && snake[0].y === food_y;
+		const goingUp = dy === -10;
+		const goingDown = dy === 10;
+		const goingRight = dx === 10;
+		const goingLeft = dx === -10;
+		wallHitBoolean = wallHittingValidation();	
+		//end variables
+		
+		if(!wallHitBoolean) {
+			//init body validations
+			//GOING UP
+			if(goingUp){
+				if(snake[0].y > food_y){
+					if(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x) < 0){
+						dx = 0;
+						dy = -10;
+						globalBoolean = true;
+						move_snake();       
+						console.log("Keep Going UP")
+						console.log(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x))
+						console.log(snake)
+					}
+				}else if(snake[0].x < food_x){
+					if(snake.findIndex(p => p.x == snake[0].x + 10 && p.y == snake[0].y) < 0){
+					dy = 0;
+					dx = 10;
+					globalBoolean = true;
+					move_snake();       
+					}
+				}else if(snake[0].x > food_x){
+					if(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y) < 0){
+						dy = 0;
+						dx = -10;
+						globalBoolean = true;
+						move_snake();       
+					}
+				}        
+				else if(snake.findIndex(p => p.x == snake[0].x + 10 && p.y == snake[0].y) > 0 ){
+					if(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y) > 0 ){
+						console.log("Died going up");
+					}else{
+						dy = 0;
+						dx = -10;
+						globalBoolean = true;
+						console.log("Going Up Turn Left")
+						console.log(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y))
+						console.log(snake)
+						move_snake();       
+					}
+				}else{
+				dy = 0;
+				dx = 10;
+				globalBoolean = true;
+				console.log("Going Up Turn Down")
+				console.log(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y))
+				console.log(snake)
+				move_snake();       
+				}
+			}
+				
+			//GOING DOWN
+			if(goingDown){
+				if(snake[0].y < food_y){
+					if(snake.findIndex(p => p.y == snake[0].y + 10 && p.x == snake[0].x) < 0){
+						dx = 0;
+						dy = 10;
+						globalBoolean = true;
+						console.log("Keep Going DOWN")
+						console.log(snake.findIndex(p => p.y == snake[0].y + 10 && p.x == snake[0].x))
+						console.log(snake)
+						move_snake();       
+					}
+				}
+				else if(snake[0].x < food_x){
+					if(snake.findIndex(p => p.x == snake[0].x + 10 && p.y == snake[0].y) < 0){
+						dy = 0;
+						dx = 10;
+						globalBoolean = true;
+						move_snake();       
+					}
+				}else if(snake[0].x > food_x){
+					if(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y) < 0){
+						dy = 0;
+						dx = -10;
+						globalBoolean = true;
+						move_snake();       
+					}
+				}
+				else if(snake.findIndex(p => p.x == snake[0].x + 10 && p.y == snake[0].y) > 0){
+					if(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y) > 0){
+						console.log("Died going down");
+					}
+					else{
+						dy = 0;
+						dx = -10;
+						globalBoolean = true;
+						console.log("Going Down Turn Left")
+						console.log(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y))
+						console.log(snake)
+						move_snake();       
+					}
+				}
+				else{
+					dy = 0;
+					dx = 10;
+					globalBoolean = true;
+					console.log("Going DOWN Turn Right")
+					console.log(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y))
+					console.log(snake)
+					move_snake();       
+				}
+			}
+
+			//GOING LEFT
+			if(goingLeft){
+				if(snake[0].x > food_x){
+					if(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y) < 0){
+						dx = -10;
+						dy = 0;
+						globalBoolean = true;
+						console.log("Keep Going Left")
+						console.log(snake.findIndex(p => p.x == snake[0].x - 10 && p.y == snake[0].y))
+						console.log(snake)
+						move_snake();       
+					}
+				}
+				else if(snake[0].y < food_y){
+					if(snake.findIndex(p => p.y == snake[0].y + 10 && p.x == snake[0].x) < 0){
+						dy = 10;
+						dx = 0;
+						globalBoolean = true;
+						move_snake();       
+					}
+				}else if(snake[0].y > food_y){
+					if(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x) < 0){
+						dy = -10;
+						dx = 0;
+						globalBoolean = true;
+						move_snake();       
+					}
+				}
+				else if(snake.findIndex(p => p.y == snake[0].y + 10 && p.x == snake[0].x) > 0){
+					if(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x) > 0){
+						console.log("died going left");
+					}
+					else{
+						dy = -10;
+						dx = 0;
+						globalBoolean = true;
+						console.log("Going Left Turn UP")
+						console.log(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x))
+						console.log(snake)
+						move_snake();       
+					}
+				}
+				else{
+					dy = 10;
+					dx = 0;
+					globalBoolean = true;
+					console.log("Going Left Turn DOWN")
+					console.log(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x))
+					console.log(snake)
+					move_snake();       
+				}
+			}
+			//GOING RIGHT
+			if(goingRight){
+				if(snake[0].x < food_x){
+					if(snake.findIndex(p => p.x == snake[0].x + 10 && p.y == snake[0].y) < 0){
+						dx = 10;
+						dy = 0;
+						globalBoolean = true;
+						console.log("Keep Going Right")
+						console.log(snake.findIndex(p => p.x == snake[0].x + 10 && p.y == snake[0].y))
+						console.log(snake)
+						move_snake();       
+					}
+				}
+				else if(snake[0].y < food_y){
+					if(snake.findIndex(p => p.y == snake[0].y + 10 && p.x == snake[0].x) < 0){
+						dy = 10;
+						dx = 0;
+						globalBoolean = true;
+						move_snake();       
+					}
+				}else if(snake[0].y > food_y){
+					if(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x) < 0){
+						dy = -10;
+						dx = 0;
+						globalBoolean = true;
+						move_snake();       
+					}
+				}
+				else if(snake.findIndex(p => p.y == snake[0].y + 10 && p.x == snake[0].x) > 0){
+				if(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x) > 0){
+					console.log("Died going right");
+				}
+				else{
+					dy = -10;
+					dx = 0;
+					globalBoolean = true;
+					console.log("Going Right Turn UP")
+					console.log(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x))
+					console.log(snake)
+					move_snake();       
+					}
+				}
+				else{
+				dy = 10;
+				dx = 0;
+				globalBoolean = true;
+				console.log("Going Right Turn DOWN")
+				console.log(snake.findIndex(p => p.y == snake[0].y - 10 && p.x == snake[0].x))
+				console.log(snake)
+				move_snake();       
+				}
+			}
+			//end body validations
+		}
+		
+		
+
+      
+      console.log("food x: " + food_x + " food y: " + food_y);
+    } 
+	
+	function calculateHittingMatrix() {
+		let foundPositionX;
+		let foundPositionY;
+		const goingUp = dy === -10;
+		const goingDown = dy === 10;
+		const goingRight = dx === 10;
+		const goingLeft = dx === -10;
+		var neighborMatrix = [];
+		var localBoolean = false;
+		wallHitBoolean = wallHittingValidation();
+
+		//Neighbors validation start
+		if(goingUp) {
+			neighborMatrix.push({x: snake[0].x, y: snake[0].y - 10});
+			neighborMatrix.push({x: snake[0].x + 10, y: snake[0].y});
+			neighborMatrix.push({x: snake[0].x - 10, y: snake[0].y});
+		}
+		if(goingDown) {
+			neighborMatrix.push({x: snake[0].x, y: snake[0].y + 10});
+			neighborMatrix.push({x: snake[0].x + 10, y: snake[0].y});
+			neighborMatrix.push({x: snake[0].x - 10, y: snake[0].y});
+		}
+		if(goingLeft) {
+			neighborMatrix.push({x: snake[0].x - 10, y: snake[0].y});
+			neighborMatrix.push({x: snake[0].x, y: snake[0].y - 10});
+			neighborMatrix.push({x: snake[0].x, y: snake[0].y + 10});
+		}
+		if(goingRight) {
+			neighborMatrix.push({x: snake[0].x + 10, y: snake[0].y});
+			neighborMatrix.push({x: snake[0].x, y: snake[0].y - 10});
+			neighborMatrix.push({x: snake[0].x, y: snake[0].y + 10});
+		}
+		//Neighbors validation end
+
+		//Where to go decision - based on the neighbors - start
+		for(var i = neighborMatrix.length - 1; i >=0 ; i--) {
+			for(var j = snake.length - 1; j >= 0; j--){
+				if(snake[j].x.toString().includes(neighborMatrix[i].x) && !goingRight && !localBoolean && !snake[j].x.toString().includes(food_x) && !wallHitBoolean){					
+					dx = -10;
+					dy = 0;
+					console.log("test turning left if not going right")
+					localBoolean = true;
+					break;
+				} else if(snake[j].x.toString().includes(neighborMatrix[i].x) && !goingLeft && !localBoolean && !snake[j].x.toString().includes(food_x) && !wallHitBoolean){
+					dx = 10;
+					dy = 0;
+					console.log("test turning right if not going left");
+					localBoolean = true;
+					break;
+				} else if (snake[j].y.toString().includes(neighborMatrix[i].y) && !goingDown && !localBoolean && !snake[j].y.toString().includes(food_y) && !wallHitBoolean){
+					dx = 0;
+					dy = -10;
+					console.log("test turning up if not going down");
+					localBoolean = true;
+					break;
+				} else if (snake[j].y.toString().includes(neighborMatrix[i].y) && !goingUp && !localBoolean && !snake[j].y.toString().includes(food_y) && !wallHitBoolean){
+					dx = 0;
+					dy = 10;
+					console.log("test turning down if not going up");
+					localBoolean = true;
+					break;
+				}
+				if(localBoolean){drawSnake(); move_snake();}
+			}
+			if(localBoolean){break;}
+		}
+
+		neighborMatrix = [];
+		//Where to go decision - end
+			
+			/*for(var i = 1; i < snake.length; i++){
+				let foundPositionXRight = snake[i].x + 10;
+				let foundPositionXLeft = snake[i].x - 10;
+				let foundPositionYUp = snake[i].y - 10;
+				let foundPositionYDown = snake[i].y + 10;
+
+				if(snake[i].x.toString().includes(foundPositionXRight.toString()) && !goingRight){					
+					dx = -10;
+					dy = 0;
+					console.log("test turning left if not going right")
+					move_snake();
+					drawSnake();
+					break;
+				} else if(snake[i].x.toString().includes(foundPositionXLeft.toString()) && !goingLeft){
+					dx = 10;
+					dy = 0;
+					console.log("test turning right if not going left");
+					move_snake();
+					drawSnake();
+					break;
+				} else if (snake[i].y.toString().includes(foundPositionYUp.toString()) && !goingDown){
+					dx = 0;
+					dy = -10;
+					console.log("test turning up if not going down");
+					move_snake();
+					drawSnake();
+					break;
+				} else if (snake[i].y.toString().includes(foundPositionYDown.toString()) && !goingUp){
+					dx = 0;
+					dy = 10;
+					console.log("test turning down if not going up");
+					move_snake();
+					drawSnake();
+					break;
+				}
+			}*/
+	}
+
+	function wallHittingValidation() {
+
+		const goingUp = dy === -10;
+		const goingDown = dy === 10;
+		const goingRight = dx === 10;
+		const goingLeft = dx === -10;
+		const willHitLeftWall = snake[0].x-10 < 0;
+		const willHitRightWall = snake[0].x+10 > snakeboard.width - 10;
+		const willHitTopWall = snake[0].y-10 < 0;
+		const willHitBottomWall = snake[0].y+10 > snakeboard.height - 10;
+		let wallHitBoolean = false;
+
+
+		if(snake[0].x === food_x && willHitBottomWall && goingDown){
+			if(!willHitRightWall){
+				dx = 10;
+				dy = 0;
+				wallHitBoolean = true;
+			}else if(!willHitLeftWall){
+				dx = -10;
+				dy = 0;
+				wallHitBoolean = true;
+			}
+			dy = -10;
+			dx = 0;
+			wallHitBoolean = true;
+		}
+            
+		if(snake[0].x === food_x && willHitTopWall && goingUp){
+			if(!willHitRightWall){
+				dx = 10;
+				dy = 0;
+				wallHitBoolean = true;
+			}else if(!willHitLeftWall){
+				dx = -10;
+				dy = 0;
+				wallHitBoolean = true;
+			}
+			dy = 10;
+			dx = 0;   
+			wallHitBoolean = true;     
+		}
+		if(snake[0].y === food_y && willHitLeftWall && goingLeft){
+			if(!willHitTopWall){
+				dy = -10;
+				dx = 0;
+				wallHitBoolean = true;
+			}else if(!willHitBottomWall){
+				dy = 10;
+				dx = 0;
+				wallHitBoolean = true;
+			}
+			dx = 10;   
+			dy = 0;  
+			wallHitBoolean = true;  
+		}  
+		if(snake[0].y === food_y && willHitRightWall && goingRight){
+			if(!willHitTopWall){
+				dy = -10;
+				dx = 0;
+				wallHitBoolean = true;
+			}else if(!willHitBottomWall){
+				dy = 10;
+				dx = 0;
+				wallHitBoolean = true;
+			}
+			dx = -10;    
+			dy = 0;
+			wallHitBoolean = true;
+		}
+
+		if(wallHitBoolean){return true;}
+		else{return false;}
+	}
+
+    // draw a border around the canvas
+    function clear_board() {
+      //  Select the colour to fill the drawing
+      snakeboard_ctx.fillStyle = board_background;
+      //  Select the colour for the border of the canvas
+      snakeboard_ctx.strokestyle = board_border;
+      // Draw a "filled" rectangle to cover the entire canvas
+      snakeboard_ctx.fillRect(0, 0, snakeboard.width, snakeboard.height);
+      // Draw a "border" around the entire canvas
+      snakeboard_ctx.strokeRect(0, 0, snakeboard.width, snakeboard.height);
+    }
+    
+    // Draw the snake on the canvas
+    function drawSnake() {
+      // Draw each part
+      snake.forEach(drawSnakePart)
+    }
+
+    function drawFood() {
+      snakeboard_ctx.fillStyle = 'red';
+      snakeboard_ctx.strokestyle = 'darkgreen';
+      snakeboard_ctx.fillRect(food_x, food_y, 10, 10);
+      snakeboard_ctx.strokeRect(food_x, food_y, 10, 10);
+    }
+    
+    // Draw one snake part
+    function drawSnakePart(snakePart) {
+
+      // Set the colour of the snake part
+      snakeboard_ctx.fillStyle = snake_col;
+      // Set the border colour of the snake part
+      snakeboard_ctx.strokestyle = snake_border;
+      // Draw a "filled" rectangle to represent the snake part at the coordinates
+      // the part is located
+      snakeboard_ctx.fillRect(snakePart.x, snakePart.y, 10, 10);
+      // Draw a border around the snake part
+      snakeboard_ctx.strokeRect(snakePart.x, snakePart.y, 10, 10);
+    }
+
+    function has_game_ended() {
+      for (let i = 4; i < snake.length; i++) {
+        if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true
+      }
+      const hitLeftWall = snake[0].x < 0;
+      const hitRightWall = snake[0].x > snakeboard.width - 10;
+      const hitToptWall = snake[0].y < 0;
+      const hitBottomWall = snake[0].y > snakeboard.height - 10;
+      return hitLeftWall || hitRightWall || hitToptWall || hitBottomWall
+    }
+
+    function random_food(min, max) {
+      return Math.round((Math.random() * (max-min) + min) / 10) * 10;
+    }
+
+    function gen_food() {
+      // Generate a random number the food x-coordinate
+      food_x = random_food(0, snakeboard.width - 10);
+      // Generate a random number for the food y-coordinate
+      food_y = random_food(0, snakeboard.height - 10);
+      // if the new food location is where the snake currently is, generate a new food location
+      snake.forEach(function has_snake_eaten_food(part) {
+        const has_eaten = part.x == food_x && part.y == food_y;
+        if (has_eaten) gen_food();
+      });
+    }
+
+    
+    function move_snake() {
+      // Create the new Snake's head
+      const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+      // Add the new head to the beginning of snake body
+      snake.unshift(head);
+      const has_eaten_food = snake[0].x === food_x && snake[0].y === food_y;
+      if (has_eaten_food) {
+        // Increase score
+        score += 1;
+        // Display score on screen
+        document.getElementById('score').innerHTML = score;
+        // Generate new food location
+        gen_food();
+      } else {
+        // Remove the last part of snake body
+        snake.pop();
+      }
+    }
+    
+  </script>
+</html>
